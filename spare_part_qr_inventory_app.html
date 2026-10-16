@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบสแกนเบิกอะไหล่คลังสินค้า</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Sarabun & Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Sarabun', 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col items-center justify-start p-0 m-0">
+
+    <!-- Container ขนาดเหมาะสำหรับมือถือและเดสก์ท็อป -->
+    <div class="w-full max-w-xl bg-slate-900 min-h-screen shadow-2xl flex flex-col relative overflow-hidden border-x border-slate-800">
+        
+        <!-- Header -->
+        <header class="bg-slate-900/80 backdrop-blur-md border-b border-slate-800 p-4 sticky top-0 z-30 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-blue-600 text-white p-2.5 rounded-xl shadow-lg shadow-blue-600/30">
+                    <i class="fa-solid fa-boxes-stacked text-base"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-base leading-tight text-white">Smart Warehouse</h1>
+                    <p class="text-xs text-slate-400">ระบบสแกน QR Code เบิกอะไหล่</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2">
+                <button onclick="switchTab('scanner')" id="nav-scanner-btn" class="text-xs bg-blue-600 text-white px-3 py-1.5 rounded-lg transition font-medium flex items-center space-x-1 shadow">
+                    <i class="fa-solid fa-qrcode"></i>
+                    <span>สแกน QR</span>
+                </button>
+                <button onclick="switchTab('history')" id="nav-history-btn" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg transition font-medium flex items-center space-x-1 border border-slate-700">
+                    <i class="fa-solid fa-clock-rotate-left"></i>
+                    <span>ประวัติการเบิก <span id="badge-count" class="bg-blue-500 text-white text-[10px] px-1.5 py-0.2 rounded-full ml-1">0</span></span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 overflow-y-auto p-4 pb-24">
+
+            <!-- TAB 1: SCANNER & PART DETAILS -->
+            <div id="tab-scanner" class="space-y-6">
+                
+                <!-- ส่วนจำลองการสแกน QR (แสดงเมื่อยังไม่ได้เลือกอะไหล่) -->
+                <div id="scanner-view-container" class="flex flex-col items-center justify-center space-y-6 py-4">
+                    <div class="text-center space-y-2">
+                        <div class="inline-block bg-blue-500/10 text-blue-400 border border-blue-500/20 px-3 py-1 rounded-full text-xs font-semibold mb-1">
+                            <i class="fa-solid fa-bolt mr-1"></i> เสมือนสแกนคิวอาร์โค้ดที่ตัวอะไหล่
+                        </div>
+                        <h2 class="text-xl font-bold text-white">เลือกอะไหล่เพื่อจำลองการสแกน</h2>
+                        <p class="text-xs text-slate-400 max-w-sm mx-auto">
+                            คลิกเลือกรายการอะไหล่จำลองด้านล่างเสมือนคุณใช้มือถือสแกนคิวอาร์โค้ดที่ติดอยู่กับตัวอุปกรณ์
+                        </p>
+                    </div>
+
+                    <!-- รายการอะไหล่ตัวอย่าง (Demo QR items) -->
+                    <div class="w-full space-y-3">
+                        <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                            รายการอะไหล่ในคลัง (ตัวอย่าง QR Code)
+                        </p>
+                        
+                        <!-- Item 1: Sensor -->
+                        <div onclick="selectPart('sensor')" class="bg-slate-800/60 hover:bg-slate-800 border border-slate-700/80 hover:border-blue-500/50 p-4 rounded-2xl transition cursor-pointer group shadow-sm flex items-center justify-between">
+                            <div class="flex items-start space-x-3.5">
+                                <div class="bg-blue-500/20 text-blue-400 p-3 rounded-xl group-hover:scale-105 transition">
+                                    <i class="fa-solid fa-microchip text-lg"></i>
+                                </div>
+                                <div>
+                                    <span class="text-[11px] font-bold text-blue-400 uppercase tracking-wider bg-blue-500/10 px-2 py-0.5 rounded">Sensor</span>
+                                    <h3 class="font-bold text-white text-sm mt-1">รหัส: E2E-X3D1-N</h3>
+                                    <p class="text-xs text-slate-400 mt-0.5"><i class="fa-solid fa-location-dot text-red-400 mr-1"></i>จุดใช้งาน: Mandrel MC.KCR</p>
+                                </div>
+                            </div>
+                            <div class="bg-slate-700 group-hover:bg-blue-600 text-white text-xs px-3 py-2 rounded-xl transition flex items-center space-x-1 font-medium">
+                                <span>สแกน</span>
+                                <i class="fa-solid fa-arrow-right"></i>
+                            </div>
+                        </div>
+
+                        <!-- Item 2: Solenoid Valve -->
+                        <div onclick="selectPart('valve')" class="bg-slate-800/60 hover:bg-slate-800 border border-slate-700/80 hover:border-emerald-500/50 p-4 rounded-2xl transition cursor-pointer group shadow-sm flex items-center justify-between">
+                            <div class="flex items-start space-x-3.5">
+                                <div class="bg-emerald-500/20 text-emerald-400 p-3 rounded-xl group-hover:scale-105 transition">
+                                    <i class="fa-solid fa-gauge-high text-lg"></i>
+                                </div>
+                                <div>
+                                    <span class="text-[11px] font-bold text-emerald-400 uppercase tracking-wider bg-emerald-500/10 px-2 py-0.5 rounded">Solenoid Valve</span>
+                                    <h3 class="font-bold text-white text-sm mt-1">รหัส: 4V210-08-DC24V</h3>
+                                    <p class="text-xs text-slate-400 mt-0.5"><i class="fa-solid fa-location-dot text-red-400 mr-1"></i>จุดใช้งาน: Pneumatic Line Line-02</p>
+                                </div>
+                            </div>
+                            <div class="bg-slate-700 group-hover:bg-emerald-600 text-white text-xs px-3 py-2 rounded-xl transition flex items-center space-x-1 font-medium">
+                                <span>สแกน</span>
+                                <i class="fa-solid fa-arrow-right"></i>
+                            </div>
+                        </div>
+
+                        <!-- Item 3: Inverter -->
+                        <div onclick="selectPart('inverter')" class="bg-slate-800/60 hover:bg-slate-800 border border-slate-700/80 hover:border-amber-500/50 p-4 rounded-2xl transition cursor-pointer group shadow-sm flex items-center justify-between">
+                            <div class="flex items-start space-x-3.5">
+                                <div class="bg-amber-500/20 text-amber-400 p-3 rounded-xl group-hover:scale-105 transition">
+                                    <i class="fa-solid fa-bolt-lightning text-lg"></i>
+                                </div>
+                                <div>
+                                    <span class="text-[11px] font-bold text-amber-400 uppercase tracking-wider bg-amber-500/10 px-2 py-0.5 rounded">Inverter</span>
+                                    <h3 class="font-bold text-white text-sm mt-1">รหัส: FR-D720-0.4K</h3>
+                                    <p class="text-xs text-slate-400 mt-0.5"><i class="fa-solid fa-location-dot text-red-400 mr-1"></i>จุดใช้งาน: Conveyor Line 01</p>
+                                </div>
+                            </div>
+                            <div class="bg-slate-700 group-hover:bg-amber-600 text-white text-xs px-3 py-2 rounded-xl transition flex items-center space-x-1 font-medium">
+                                <span>สแกน</span>
+                                <i class="fa-solid fa-arrow-right"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ส่วนแสดงข้อมูลอะไหล่ที่สแกนสำเร็จ + ฟอร์มเบิก (ซ่อนไว้ก่อนจนกว่าจะเลือก) -->
+                <div id="part-detail-view" class="hidden space-y-5 animate-fadeIn">
+                    
+                    <!-- ปุ่มย้อนกลับไปหน้าเลือก QR -->
+                    <button onclick="resetScanner()" class="text-xs text-slate-400 hover:text-white flex items-center space-x-1 bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700 transition">
+                        <i class="fa-solid fa-arrow-left"></i>
+                        <span>สแกนอะไหล่ชิ้นอื่น</span>
+                    </button>
+
+                    <!-- การ์ดแสดงข้อมูลอะไหล่ -->
+                    <div class="bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700/80 rounded-2xl p-5 shadow-xl relative overflow-hidden">
+                        <div class="absolute -right-6 -bottom-6 text-slate-800/50 text-8xl pointer-events-none">
+                            <i id="bg-card-icon" class="fa-solid fa-microchip"></i>
+                        </div>
+
+                        <div class="flex items-start justify-between mb-4">
+                            <div>
+                                <span id="display-type-tag" class="text-xs font-bold px-2.5 py-1 rounded-md bg-blue-500/20 text-blue-400 uppercase tracking-wider">ประเภท: Sensor</span>
+                                <h2 id="display-code" class="text-xl font-extrabold text-white mt-2 tracking-tight">E2E-X3D1-N</h2>
+                            </div>
+                            <div class="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs px-2.5 py-1 rounded-lg font-medium">
+                                <i class="fa-solid fa-circle-check mr-1"></i> พร้อมเบิก
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-950/50 rounded-xl p-3.5 border border-slate-800/80 space-y-2">
+                            <div class="flex items-center text-xs text-slate-300">
+                                <span class="w-28 text-slate-400"><i class="fa-solid fa-location-dot text-red-400 mr-1.5"></i> จุดใช้งาน:</span>
+                                <span id="display-location" class="font-semibold text-white">Mandrel MC.KCR</span>
+                            </div>
+                            <div class="flex items-center text-xs text-slate-300">
+                                <span class="w-28 text-slate-400"><i class="fa-solid fa-box text-blue-400 mr-1.5"></i> สต็อกคงเหลือ:</span>
+                                <span id="display-stock" class="font-semibold text-emerald-400">15 ชิ้น</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ฟอร์มกรอกข้อมูลการเบิก -->
+                    <div class="bg-slate-800/70 border border-slate-700/80 rounded-2xl p-5 shadow-xl space-y-4">
+                        <div class="flex items-center space-x-2 border-b border-slate-700 pb-3">
+                            <div class="bg-blue-600 text-white p-2 rounded-lg text-xs">
+                                <i class="fa-solid fa-file-pen"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-sm font-bold text-white">ฟอร์มบันทึกการเบิกอะไหล่</h3>
+                                <p class="text-[11px] text-slate-400">กรุณากรอกข้อมูลผู้เบิกและรายละเอียดการใช้งาน</p>
+                            </div>
+                        </div>
+
+                        <form id="withdrawal-form" onsubmit="submitWithdrawal(event)" class="space-y-4">
+                            <!-- ชื่อผู้เบิก -->
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-300 mb-1.5">
+                                    <i class="fa-solid fa-user text-blue-400 mr-1"></i> ชื่อผู้เบิก / ผู้รับของ <span class="text-red-400">*</span>
+                                </label>
+                                <input type="text" id="form-name" required placeholder="เช่น นายสมชาย ช่างซ่อม" 
+                                    class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition">
+                            </div>
+
+                            <!-- ไลน์การผลิตที่จะนำไปใช้ -->
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-300 mb-1.5">
+                                    <i class="fa-solid fa-industry text-blue-400 mr-1"></i> ไลน์การผลิตที่จะนำไปใช้ <span class="text-red-400">*</span>
+                                </label>
+                                <select id="form-line" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500 transition">
+                                    <option value="" disabled selected>-- เลือกไลน์การผลิต --</option>
+                                    <option value="Line 01 (Assembly)">Line 01 (Assembly)</option>
+                                    <option value="Line 02 (Machining)">Line 02 (Machining)</option>
+                                    <option value="Line 03 (Packaging)">Line 03 (Packaging)</option>
+                                    <option value="Mandrel KCR Section">Mandrel KCR Section</option>
+                                    <option value="General Maintenance">General Maintenance (ซ่อมบำรุงทั่วไป)</option>
+                                </select>
+                            </div>
+
+                            <!-- จำนวนที่เบิก -->
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-300 mb-1.5">
+                                    <i class="fa-solid fa-cubes text-blue-400 mr-1"></i> จำนวนที่เบิกไปใช้ (ชิ้น) <span class="text-red-400">*</span>
+                                </label>
+                                <div class="flex items-center space-x-2">
+                                    <button type="button" onclick="adjustQty(-1)" class="bg-slate-900 hover:bg-slate-700 border border-slate-700 w-11 h-11 rounded-xl font-bold text-lg flex items-center justify-center transition text-slate-300">-</button>
+                                    <input type="number" id="form-qty" value="1" min="1" max="50" required 
+                                        class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-center font-bold text-white text-base focus:outline-none focus:border-blue-500 transition">
+                                    <button type="button" onclick="adjustQty(1)" class="bg-slate-900 hover:bg-slate-700 border border-slate-700 w-11 h-11 rounded-xl font-bold text-lg flex items-center justify-center transition text-slate-300">+</button>
+                                </div>
+                            </div>
+
+                            <!-- ปุ่มกดยืนยันเบิกอะไหล่ -->
+                            <button type="submit" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg shadow-blue-600/30 transition flex items-center justify-center space-x-2 text-sm mt-2">
+                                <i class="fa-solid fa-circle-check"></i>
+                                <span>ยืนยันเบิกอะไหล่</span>
+                            </button>
+                        </form>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- TAB 2: HISTORY TABLE (EXCEL STYLE) -->
+            <div id="tab-history" class="hidden space-y-4">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-slate-800/80 p-4 rounded-2xl border border-slate-700">
+                    <div>
+                        <h2 class="font-bold text-white text-base">ตารางประวัติการเบิกอะไหล่</h2>
+                        <p class="text-xs text-slate-400">บันทึกข้อมูลอัตโนมัติพร้อมวันที่และเวลา</p>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button onclick="exportToCSV()" class="flex-1 sm:flex-none bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold px-3.5 py-2 rounded-xl transition flex items-center justify-center space-x-1.5 shadow">
+                            <i class="fa-solid fa-file-excel"></i>
+                            <span>ดาวน์โหลด Excel/CSV</span>
+                        </button>
+                        <button onclick="clearHistory()" class="bg-slate-700 hover:bg-red-600/30 hover:border-red-500 hover:text-red-400 text-slate-300 text-xs px-3 py-2 rounded-xl transition border border-slate-600" title="ล้างประวัติ">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ตารางข้อมูล -->
+                <div class="bg-slate-800/50 border border-slate-700/80 rounded-2xl overflow-hidden shadow-xl">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-xs">
+                            <thead>
+                                <tr class="bg-slate-900/90 text-slate-400 border-b border-slate-700 font-semibold uppercase tracking-wider">
+                                    <th class="p-3">วัน-เวลา</th>
+                                    <th class="p-3">ประเภทอุปกรณ์</th>
+                                    <th class="p-3">รหัสอะไหล่</th>
+                                    <th class="p-3">จุดใช้งาน</th>
+                                    <th class="p-3">ผู้เบิก</th>
+                                    <th class="p-3">ไลน์ผลิต</th>
+                                    <th class="p-3 text-center">จำนวน</th>
+                                </tr>
+                            </thead>
+                            <tbody id="history-table-body" class="divide-y divide-slate-700/50 text-slate-200">
+                                <!-- แถวว่างเริ่มต้น -->
+                                <tr id="empty-row">
+                                    <td colspan="7" class="p-8 text-center text-slate-500">
+                                        <i class="fa-solid fa-folder-open text-3xl mb-2 block opacity-40"></i>
+                                        ยังไม่มีประวัติการเบิกอะไหล่ในระบบ
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+
+        <!-- Toast Notification สำหรับแจ้งเตือนสำเร็จ -->
+        <div id="toast" class="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-emerald-600 text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center space-x-3 text-sm font-medium transition-all duration-300 translate-y-24 opacity-0 z-50 pointer-events-none">
+            <i class="fa-solid fa-circle-check text-lg"></i>
+            <span id="toast-message">บันทึกข้อมูลการเบิกสำเร็จ!</span>
+        </div>
+
+    </div>
+
+    <!-- JavaScript สำหรับควบคุมระบบ -->
+    <script>
+        // ข้อมูลอะไหล่จำลอง (ฐานข้อมูลตัวอย่าง)
+        const partsDatabase = {
+            sensor: {
+                type: 'Sensor',
+                code: 'E2E-X3D1-N',
+                location: 'Mandrel MC.KCR',
+                stock: 15,
+                icon: 'fa-microchip',
+                color: 'text-blue-400'
+            },
+            valve: {
+                type: 'Solenoid Valve',
+                code: '4V210-08-DC24V',
+                location: 'Pneumatic Line Line-02',
+                stock: 8,
+                icon: 'fa-gauge-high',
+                color: 'text-emerald-400'
+            },
+            inverter: {
+                type: 'Inverter',
+                code: 'FR-D720-0.4K',
+                location: 'Conveyor Line 01',
+                stock: 4,
+                icon: 'fa-bolt-lightning',
+                color: 'text-amber-400'
+            }
+        };
+
+        let currentSelectedPart = null;
+        let withdrawalHistory = [];
+
+        // ฟังก์ชันสลับแท็บระหว่างหน้าสแกน กับ หน้าประวัติ
+        function switchTab(tabName) {
+            const scannerTab = document.getElementById('tab-scanner');
+            const historyTab = document.getElementById('tab-history');
+            const scannerBtn = document.getElementById('nav-scanner-btn');
+            const historyBtn = document.getElementById('nav-history-btn');
+
+            if (tabName === 'scanner') {
+                scannerTab.classList.remove('hidden');
+                historyTab.classList.add('hidden');
+                scannerBtn.className = "text-xs bg-blue-600 text-white px-3 py-1.5 rounded-lg transition font-medium flex items-center space-x-1 shadow";
+                historyBtn.className = "text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg transition font-medium flex items-center space-x-1 border border-slate-700";
+            } else {
+                scannerTab.classList.add('hidden');
+                historyTab.classList.remove('hidden');
+                historyBtn.className = "text-xs bg-blue-600 text-white px-3 py-1.5 rounded-lg transition font-medium flex items-center space-x-1 shadow";
+                scannerBtn.className = "text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg transition font-medium flex items-center space-x-1 border border-slate-700";
+            }
+        }
+
+        // เมื่อผู้ใช้เลือกสแกนอะไหล่ (จำลอง QR Scan)
+        function selectPart(partKey) {
+            currentSelectedPart = partsDatabase[partKey];
+            if (!currentSelectedPart) return;
+
+            // ซ่อนหน้าเลือก QR และแสดงหน้ารายละเอียด + ฟอร์ม
+            document.getElementById('scanner-view-container').classList.add('hidden');
+            document.getElementById('part-detail-view').classList.remove('hidden');
+
+            // เติมข้อมูลลงในหน้าจอ
+            document.getElementById('display-type-tag').innerText = `ประเภท: ${currentSelectedPart.type}`;
+            document.getElementById('display-code').innerText = currentSelectedPart.code;
+            document.getElementById('display-location').innerText = currentSelectedPart.location;
+            document.getElementById('display-stock').innerText = `${currentSelectedPart.stock} ชิ้น`;
+            document.getElementById('bg-card-icon').className = `fa-solid ${currentSelectedPart.icon}`;
+            
+            // รีเซ็ตฟอร์ม
+            document.getElementById('form-name').value = '';
+            document.getElementById('form-line').selectedIndex = 0;
+            document.getElementById('form-qty').value = 1;
+        }
+
+        // กลับไปหน้าเลือก QR ใหม่
+        function resetScanner() {
+            currentSelectedPart = null;
+            document.getElementById('scanner-view-container').classList.remove('hidden');
+            document.getElementById('part-detail-view').classList.add('hidden');
+        }
+
+        // เพิ่ม-ลดจำนวนในฟอร์มเบิก
+        function adjustQty(amount) {
+            const qtyInput = document.getElementById('form-qty');
+            let currentVal = parseInt(qtyInput.value) || 1;
+            currentVal += amount;
+            if (currentVal < 1) currentVal = 1;
+            if (currentSelectedPart && currentVal > currentSelectedPart.stock) {
+                currentVal = currentSelectedPart.stock;
+            }
+            qtyInput.value = currentVal;
+        }
+
+        // เมื่อกดยืนยันเบิกอะไหล่
+        function submitWithdrawal(event) {
+            event.preventDefault();
+
+            if (!currentSelectedPart) return;
+
+            const name = document.getElementById('form-name').value.trim();
+            const line = document.getElementById('form-line').value;
+            const qty = parseInt(document.getElementById('form-qty').value);
+
+            if (!name || !line || isNaN(qty)) return;
+
+            // สร้าง Timestamp ปัจจุบัน (รูปแบบไทย)
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('th-TH', { year: 'numeric', month: '2-digit', day: '2-digit' });
+            const timeStr = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            const timestamp = `${dateStr} ${timeStr}`;
+
+            // บันทึกข้อมูลลงอาเรย์ประวัติ
+            const record = {
+                timestamp,
+                type: currentSelectedPart.type,
+                code: currentSelectedPart.code,
+                location: currentSelectedPart.location,
+                name,
+                line,
+                qty
+            };
+
+            withdrawalHistory.unshift(record); // ใส่ข้อมูลใหม่ไว้ด้านบนสุด
+
+            // อัปเดตสต็อกจำลอง
+            currentSelectedPart.stock -= qty;
+            if (currentSelectedPart.stock < 0) currentSelectedPart.stock = 0;
+
+            // เรนเดอร์ตารางใหม่
+            renderHistoryTable();
+
+            // แสดงแจ้งเตือน Success Toast
+            showToast("บันทึกการเบิกอะไหล่สำเร็จและลงตารางเรียบร้อยแล้ว!");
+
+            // กลับไปหน้าสแกนหลัก
+            resetScanner();
+            
+            // สลับไปดูแท็บประวัติอัตโนมัติเพื่อให้เห็นข้อมูลในตารางทันที
+            setTimeout(() => {
+                switchTab('history');
+            }, 800);
+        }
+
+        // เรนเดอร์ข้อมูลลงตาราง HTML
+        function renderHistoryTable() {
+            const tbody = document.getElementById('history-table-body');
+            const badgeCount = document.getElementById('badge-count');
+            
+            badgeCount.innerText = withdrawalHistory.length;
+
+            if (withdrawalHistory.length === 0) {
+                tbody.innerHTML = `
+                    <tr id="empty-row">
+                        <td colspan="7" class="p-8 text-center text-slate-500">
+                            <i class="fa-solid fa-folder-open text-3xl mb-2 block opacity-40"></i>
+                            ยังไม่มีประวัติการเบิกอะไหล่ในระบบ
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            let html = '';
+            withdrawalHistory.forEach((item, index) => {
+                html += `
+                    <tr class="hover:bg-slate-700/30 transition">
+                        <td class="p-3 text-slate-400 whitespace-nowrap">${item.timestamp}</td>
+                        <td class="p-3 font-semibold text-blue-400">${item.type}</td>
+                        <td class="p-3 font-mono font-bold text-white">${item.code}</td>
+                        <td class="p-3 text-slate-300">${item.location}</td>
+                        <td class="p-3 text-slate-200">${item.name}</td>
+                        <td class="p-3 text-slate-300">${item.line}</td>
+                        <td class="p-3 text-center font-bold text-emerald-400">${item.qty} ชิ้น</td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = html;
+        }
+
+        // แสดง Toast แจ้งเตือน
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-message').innerText = message;
+            toast.classList.remove('translate-y-24', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-24', 'opacity-0');
+            }, 3000);
+        }
+
+        // ล้างประวัติการเบิก
+        function clearHistory() {
+            if (confirm("คุณต้องการล้างประวัติการเบิกทั้งหมดใช่หรือไม่?")) {
+                withdrawalHistory = [];
+                renderHistoryTable();
+                showToast("ล้างประวัติการเบิกเรียบร้อยแล้ว");
+            }
+        }
+
+        // ดาวน์โหลดตารางเป็น CSV / Excel
+        function exportToCSV() {
+            if (withdrawalHistory.length === 0) {
+                alert("ยังไม่มีข้อมูลสำหรับการดาวน์โหลด");
+                return;
+            }
+
+            let csvContent = "\uFEFF"; // BOM สำหรับภาษาไทยใน Excel
+            csvContent += "วัน-เวลา,ประเภทอุปกรณ์,รหัสอะไหล่,จุดใช้งาน,ชื่อผู้เบิก,ไลน์การผลิต,จำนวนที่เบิก\n";
+
+            withdrawalHistory.forEach(item => {
+                csvContent += `"${item.timestamp}","${item.type}","${item.code}","${item.location}","${item.name}","${item.line}",${item.qty}\n`;
+            });
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.setAttribute('href', url);
+            a.setAttribute('download', `SparePart_Withdrawal_History_${new Date().toISOString().slice(0,10)}.csv`);
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            
+            showToast("ดาวน์โหลดไฟล์ตารางสำเร็จแล้ว!");
+        }
+    </script>
+</body>
+</html>
